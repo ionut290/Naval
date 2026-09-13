@@ -1,5 +1,5 @@
-const APP_CACHE='varga-navigator-v9';
-const TILE_CACHE='varga-navigator-v9';
+const APP_CACHE='varga-navigator-v10';
+const TILE_CACHE='varga-navigator-v10';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon.svg','./sw.js'];
 const CDN=[
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
@@ -15,7 +15,7 @@ self.addEventListener('install',event=>event.waitUntil((async()=>{
 
 self.addEventListener('activate',event=>event.waitUntil((async()=>{
   const keys=await caches.keys();
-  await Promise.all(keys.filter(key=>key.startsWith('varga-navigator-v9')&&key!==APP_CACHE).map(key=>caches.delete(key)));
+  await Promise.all(keys.filter(key=>key.startsWith('varga-navigator-v10')&&key!==APP_CACHE).map(key=>caches.delete(key)));
   await self.clients.claim();
 })()));
 
