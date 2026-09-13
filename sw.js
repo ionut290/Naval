@@ -1,4 +1,4 @@
-const APP_CACHE='varga-marine-app-v5';
+const APP_CACHE='varga-marine-app-v6';
 const TILE_CACHE='varga-marine-tiles-v1';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon.svg','./sw.js'];
 const CDN=[
@@ -47,4 +47,3 @@ self.addEventListener('fetch',event=>{
   }
   event.respondWith(caches.match(event.request).then(hit=>hit||fetch(event.request).catch(()=>caches.match('./index.html'))));
 });
-
