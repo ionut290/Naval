@@ -1,4 +1,4 @@
-const APP_CACHE='varga-marine-app-v6';
+const APP_CACHE='varga-marine-app-v7';
 const TILE_CACHE='varga-marine-tiles-v1';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon.svg','./sw.js'];
 const CDN=[
