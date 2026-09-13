@@ -5,6 +5,10 @@ PWA browser app per navigazione marina offline.
 - GPS reale con `navigator.geolocation`
 - carta reale OpenStreetMap con salvataggio manuale della zona visibile
 - cache delle mappe offline separata dagli aggiornamenti dell'app
+- zoom e spostamento manuale mantenuti durante gli aggiornamenti GPS
+- pulsante **Barca** per ricentrare senza cambiare lo zoom
+- vento e raffiche da Open-Meteo Weather API
+- onde e temperatura del mare da Open-Meteo Marine API, con ultimo dato disponibile offline
 - traccia salvata in `localStorage`
 - modalità demo
 - installabile come PWA
