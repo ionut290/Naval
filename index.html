@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06283d"><meta name="description" content="Navigazione marina offline con posizione GPS">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg">
+<title>Varga Marine Offline</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,sans-serif;color:#eaf7ff;background:#061722;--cyan:#29d6e8;--panel:#0b2431}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12485c,#061722 45%);min-height:100vh}
+.topbar{height:68px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;background:#061722;border-bottom:1px solid #1c5365}
+.brand{display:flex;align-items:center;gap:8px;letter-spacing:1px}.brand small{display:block;font-size:9px;color:#76aebd;letter-spacing:2px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+button{border:0;color:inherit;font:inherit;cursor:pointer}.ghost{background:transparent;border:1px solid #397487;border-radius:9px;padding:8px 12px;font-size:12px}.hidden{display:none}
+main{max-width:900px;margin:auto;padding:12px 14px 28px}.status-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.status-card{background:linear-gradient(135deg,#0d2e3d,#09202c);border:1px solid #1a5668;border-radius:12px;padding:10px;display:flex;gap:9px;align-items:center}
+.status-card b{font-size:12px}.status-card small{display:block;color:#7caeb8;font-size:10px;margin-top:2px}.led{width:10px;height:10px;border-radius:50%;flex:none}.gray{background:#758995}.green{background:#28e58a;box-shadow:0 0 10px #28e58a}.blue{background:#3ec8ff;box-shadow:0 0 10px #3ec8ff}
+.map-shell{position:relative;border:1px solid #286478;border-radius:16px;overflow:hidden;box-shadow:0 16px 40px #0008;background:#0b536a}.map-shell canvas{width:100%;height:min(64vh,590px);min-height:350px;display:block;touch-action:none}
+.badge{position:absolute;top:10px;left:10px;padding:6px 8px;background:#06283dcc;border:1px solid #4ba3b8;border-radius:6px;font-size:9px;letter-spacing:1px;color:#b8edf3}
+.controls{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}.controls button{width:36px;height:36px;border-radius:8px;background:#06283dcc;border:1px solid #4ba3b8;font-size:21px}.crosshair{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);font-size:22px;color:#b5e8ef99;pointer-events:none}
+.readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.readouts div{background:var(--panel);border:1px solid #174658;border-radius:9px;padding:9px}.readouts span{font-size:9px;color:#72aeba;letter-spacing:1px;display:block}.readouts b{font-size:14px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:8px}.actions button{flex:1;border-radius:10px;padding:12px 8px;font-size:13px;font-weight:700}.primary{background:var(--cyan);color:#062431}.secondary{background:#113646;border:1px solid #2c7181}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:15px 2px 8px;color:#a8cbd2;font-size:11px}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.you{background:#ffec66}.track{background:#ffdf35}.land{background:#b1a06b}.note{color:#7195a0;font-size:11px;line-height:1.45;margin:12px 2px}
+@media(max-width:520px){.readouts{grid-template-columns:repeat(2,1fr)}.actions{flex-wrap:wrap}.actions button:first-child{flex-basis:100%}}
+</style></head>
+<body>
+<header class="topbar"><div class="brand"><span class="dot"></span><div><strong>VARGA MARINE</strong><small>OFFLINE NAVIGATOR</small></div></div><button id="install" class="ghost hidden">Installa</button></header>
+<main>
+<section class="status-row"><div class="status-card"><span id="led" class="led gray"></span><div><b id="state">GPS in attesa</b><small id="detail">Premi “Localizzami”</small></div></div><div class="status-card"><span class="led blue"></span><div><b>Carta locale</b><small>Nessuna rete necessaria</small></div></div></section>
+<section class="map-shell"><canvas id="map"></canvas><div class="badge">CARTA LOCALE • MEDITERRANEA</div><div class="controls"><button id="plus">+</button><button id="minus">−</button><button id="reset">⌖</button></div><div class="crosshair">＋</div></section>
+<section class="readouts"><div><span>LATITUDINE</span><b id="lat">--</b></div><div><span>LONGITUDINE</span><b id="lon">--</b></div><div><span>VELOCITÀ</span><b id="speed">-- kn</b></div><div><span>ROTTA</span><b id="course">--°</b></div><div><span>PRECISIONE</span><b id="accuracy">-- m</b></div><div><span>ULTIMO FIX</span><b id="time">--</b></div></section>
+<section class="actions"><button id="locate" class="primary">◉ Localizzami</button><button id="demo" class="secondary">Avvia demo</button><button id="clear" class="secondary">Cancella traccia</button></section>
+<section class="legend"><span><i class="you"></i>La tua posizione</span><span><i class="track"></i>Traccia GPS</span><span><i class="land"></i>Terra</span></section>
+<p class="note">Il GPS può funzionare senza internet, ma deve essere attivo e il telefono deve avere visibilità del cielo. Questa versione usa una carta locale semplificata; le carte nautiche dettagliate offline potranno essere aggiunte per zona.</p>
+</main>
+<script>
+const c=document.getElementById('map'),x=c.getContext('2d');let W=0,H=0,z=1,px=0,py=0,drag=false,lx=0,ly=0,pos=null,watch=null,demoTimer=null,track=JSON.parse(localStorage.getItem('marineTrack')||'[]');
+const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function resize(){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);draw()}addEventListener('resize',resize);
+function project(lat,lon){return [(lon+180)/360*900-450,(90-lat)/180*450-225]}
+function point(lat,lon){const p=project(lat,lon);return[W/2+(p[0]+px)*z,H/2+(p[1]+py)*z]}
+function draw(){x.clearRect(0,0,W,H);x.fillStyle='#0a6178';x.fillRect(0,0,W,H);x.save();x.translate(W/2,H/2);x.scale(z,z);x.translate(px,py);x.translate(-W/2,-H/2);x.strokeStyle='#56abc0aa';x.lineWidth=1/z;x.font=(10/z)+'px system-ui';
+for(let lon=-180;lon<=180;lon+=10){let q=point(0,lon);x.beginPath();x.moveTo(q[0],0);x.lineTo(q[0],H);x.stroke();if(lon%30===0){x.fillStyle='#b5e6e899';x.fillText(Math.abs(lon)+'°'+(lon<0?'W':'E'),q[0]+3,16)}}
+for(let lat=-80;lat<=80;lat+=10){let q=point(lat,0);x.beginPath();x.moveTo(0,q[1]);x.lineTo(W,q[1]);x.stroke();if(lat%20===0){x.fillStyle='#b5e6e899';x.fillText(Math.abs(lat)+'°'+(lat<0?'S':'N'),4,q[1]-3)}}
+const land=[[[37,15],[38,13],[39,12],[40,12],[41,13],[42,12],[43,13],[44,12],[45,13],[46,14],[47,14],[47,18],[44,18],[42,17],[40,17],[38,16]],[[41.2,8.1],[42.2,8.5],[43,9.5],[42.4,10.1],[41.1,9.8],[40.1,9.2],[39,9.3],[38.7,8.5],[40,8.1]],[[42.9,8.5],[43.8,8.8],[43.1,9.5],[42.4,9.4]],[[37.1,13],[38.2,12],[38.1,14.8],[37,15.3],[36.4,14.1]]];
+x.fillStyle='#b0a36c';x.strokeStyle='#d3c891';x.lineWidth=1.5/z;land.forEach(poly=>{x.beginPath();poly.forEach((p,i)=>{const q=point(p[0],p[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.closePath();x.fill();x.stroke()});
+if(track.length>1){x.beginPath();track.forEach((p,i)=>{const q=point(p.lat,p.lon);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.strokeStyle='#ffe52d';x.lineWidth=2.5/z;x.stroke()}
+if(pos){const q=point(pos.lat,pos.lon);x.beginPath();x.arc(q[0],q[1],10/z,0,Math.PI*2);x.fillStyle='#ffe94f55';x.fill();x.beginPath();x.arc(q[0],q[1],5/z,0,Math.PI*2);x.fillStyle='#fff27d';x.fill();x.strokeStyle='#fff';x.lineWidth=1/z;x.stroke()}x.restore()}
+function coord(n,lat){return Number.isFinite(n)?Math.abs(n).toFixed(6)+'° '+(lat?(n>=0?'N':'S'):(n>=0?'E':'W')):'--'}
+function update(p,source){const q=p.coords;pos={lat:q.latitude,lon:q.longitude};track.push({lat:pos.lat,lon:pos.lon,t:Date.now()});if(track.length>2000)track.shift();localStorage.setItem('marineTrack',JSON.stringify(track));$('lat').textContent=coord(pos.lat,true);$('lon').textContent=coord(pos.lon,false);$('speed').textContent=Number.isFinite(q.speed)&&q.speed>=0?(q.speed*1.94384).toFixed(1)+' kn':'-- kn';$('course').textContent=Number.isFinite(q.heading)&&q.heading>=0?Math.round(q.heading)+'°':'--°';$('accuracy').textContent=Number.isFinite(q.accuracy)?Math.round(q.accuracy)+' m':'-- m';$('time').textContent=new Date().toLocaleTimeString();$('state').textContent=source==='DEMO'?'Modalità demo':'GPS attivo';$('detail').textContent=source==='DEMO'?'posizione simulata':'posizione aggiornata';$('led').className='led green';draw()}
+function locate(){if(!navigator.geolocation){$('state').textContent='GPS non disponibile';return}if(watch!==null)navigator.geolocation.clearWatch(watch);$('state').textContent='Ricerca GPS…';watch=navigator.geolocation.watchPosition(p=>update(p,'GPS'),e=>{$('state').textContent='GPS non disponibile';$('detail').textContent=e.message||'Attiva la posizione'}, {enableHighAccuracy:true,maximumAge:10000,timeout:15000})}
+function runDemo(){if(demoTimer){clearInterval(demoTimer);demoTimer=null;$('demo').textContent='Avvia demo';return}let i=0,q={coords:{latitude:39.2,longitude:9.15,speed:2.2,heading:65,accuracy:8}};$('demo').textContent='Ferma demo';demoTimer=setInterval(()=>{q.coords.latitude=39.2+Math.sin(i/12)*.08;q.coords.longitude=9.15+i*.003;update(q,'DEMO');i++},1000)}
+$('locate').onclick=locate;$('demo').onclick=runDemo;$('clear').onclick=()=>{track=[];localStorage.removeItem('marineTrack');draw()};$('plus').onclick=()=>{z=clamp(z*1.25,1,8);draw()};$('minus').onclick=()=>{z=clamp(z/1.25,1,8);draw()};$('reset').onclick=()=>{z=1;px=py=0;draw()};
+c.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;c.setPointerCapture(e.pointerId)};c.onpointermove=e=>{if(!drag)return;px+=(e.clientX-lx)/z;py+=(e.clientY-ly)/z;lx=e.clientX;ly=e.clientY;draw()};c.onpointerup=()=>drag=false;c.onwheel=e=>{e.preventDefault();z=clamp(z*(e.deltaY<0?1.12:.89),1,8);draw()};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');let deferred=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('install').classList.remove('hidden')});$('install').onclick=()=>{if(deferred){deferred.prompt();deferred=null}};resize();
+</script></body></html>
